@@ -24,12 +24,15 @@ class NeuralNetwork():
         self.A = [x]
 
         for i in range(self.length):
-            self.O.append(np.dot(self.W[i], x) + self.B[i])
+            self.O.append(np.dot(self.W[i], self.A[i]) + self.B[i])
             self.A.append(self.sigmoid(self.O[i]))
         
         return self.A[self.length]
 
-    def loss(self, predict, y):
+    def mse(self, predict, y):
+        return (predict - y)**2
+
+    def cross_entropy_loss(self, predict, y):
         return (-(y * np.log(predict)) - ((1 - y) * np.log(1 - predict)))
 
     def backward(self, predict, y, learning_rate):
@@ -40,7 +43,7 @@ class NeuralNetwork():
         for i in reversed(range(self.length)):
             self.dW.append(np.dot(delta, self.A[i].T))
             self.dB.append(np.sum(delta, axis=0, keepdims=True))
-            delta = np.multiply(np.dot(self.W[i].T, delta), self.A[i-1] * (1- self.A[i-1]))
+            delta = np.multiply(np.dot(self.W[i].T, delta), self.A[i] * (1 - self.A[i]))
 
         self.dW.reverse()
         self.dB.reverse()
@@ -54,19 +57,17 @@ class NeuralNetwork():
         for i in range(iterations):
             predict = self.forward(x)
             self.backward(predict, y, learning_rate)
-            loss = self.loss(predict, y)
+            loss = np.sum(self.mse(predict, y), axis=1)
             losses.append(loss)
         
         if display:
             plt.plot(range(iterations), losses)
             plt.xlabel("Iterations")
-            plt.ylabel("Cost")
+            plt.ylabel("Loss")
             plt.show()
 
 X = np.array([[0, 0, 1, 1], [0, 1, 0, 1]])
 Y = np.array([[0, 1, 1, 0]])
 
-nn = NeuralNetwork([2, 2, 1])
-nn.train(X, Y, 5000, learning_rate=0.1, display=False)
-
-print(nn.forward(X))
+nn = NeuralNetwork([2, 3, 1])
+nn.train(X, Y, iterations=1000, learning_rate=0.1, display=True)
